@@ -10,7 +10,7 @@ public class main {
 
     private static final int smoother = 1;
     //chi-square test vervanger
-    private static final int top = 10000;
+    private static final int top = 1000;
 
     private static int documents = 0;
     private static int spamDocuments = 0;
@@ -61,6 +61,8 @@ public class main {
         }
         System.out.println("correct " + correct);
         System.out.println("incorrect " + incorrect);
+        double percentage = (correct / (double) (correct + incorrect)) * 100;
+        System.out.println(percentage + "%");
     }
 
     private static void train(int i) {

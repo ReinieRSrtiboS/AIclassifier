@@ -3,13 +3,13 @@ package main;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-public class main {
+public class Main {
 
     private static final int smoother = 1;
     private static final int MAX_SIZE = 300;
@@ -17,11 +17,11 @@ public class main {
 
     private static int[] documents = new int[NUMBER_OF_CLASSES + 1];
 
-    private static Map<String, Integer> vocabulary = new HashMap<>();  //de lijst met woorden die worden gebruikt
+    private static Map<String, BigDecimal> vocabulary = new HashMap<>();  //de lijst met woorden die worden gebruikt
 
     private static Map<String, int[]> wordCount = new HashMap<>(); //telt per woord het aantal per class
 
-    private static Map<String, int[]> wordTable = new HashMap<>();  //de chi-square tabel
+    private static Map<String, int[]> chiSquare = new HashMap<>(); // telt per woord aantal texten dat hij inzit
 
     private static int[] words = new int[NUMBER_OF_CLASSES]; //telt het aantal woorden per class
 
@@ -34,6 +34,12 @@ public class main {
             train(i);
         }
 //        train(1);
+        for (String word : wordCount.keySet()) {
+            chiSquare(word);
+        }
+//        for (String key : vocabulary.keySet()) {
+//            System.out.println(key + " " + vocabulary.get(key));
+//        }
         double V = wordCount.keySet().size();
 
         double[] classChance = new double[NUMBER_OF_CLASSES];
@@ -43,7 +49,7 @@ public class main {
 
         for (int i = 1; i < 11; i++) {
             //TODO fix path
-            File dir = new File("C:\\Users\\reinier\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
+            File dir = new File("C:\\Users\\Reinier2\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
             for (File file : dir.listFiles()) {
                 double spamKans = 0;
                 double hamKans = 0;
@@ -54,8 +60,8 @@ public class main {
                         hamKans += Math.log(classify(word, V, 1));
                     }
                 }
-                hamKans += Math.log(classChance[1]);
                 spamKans += Math.log(classChance[0]);
+                hamKans += Math.log(classChance[1]);
 //                System.out.println("ham " + hamKans + " spam " + spamKans);
                 if ((hamKans > spamKans && file.getName().contains("-")) || (spamKans > hamKans && file.getName().contains("spmsg"))) {
                     correct++;
@@ -63,6 +69,7 @@ public class main {
                     incorrect++;
                 }
             }
+
         }
         System.out.println("correct " + correct);
         System.out.println("incorrect " + incorrect);
@@ -72,7 +79,7 @@ public class main {
 
     private static void train(int i) {
         //TODO maakt path compatible
-        File dir = new File("C:\\Users\\reinier\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
+        File dir = new File("C:\\Users\\Reinier2\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
         for (File file : dir.listFiles()) {
             documents[0]++;
             if (file.getName().contains("spmsg")) {
@@ -83,16 +90,32 @@ public class main {
                 documents[2]++;
             }
         }
+
+        //         testing chi-square
+
+//        File dir = new File("C:\\Users\\Reinier2\\Downloads\\corpus-mails\\corpus-mails\\corpus\\test_chisquare");
+//        for (File file : dir.listFiles()) {
+//            documents[0]++;
+//            documents[1]++;
+//            train(normalize(readFile(file.getPath()).split(" ")), 0);
+//        }
+//        File file = new File("C:\\Users\\Reinier2\\Downloads\\corpus-mails\\corpus-mails\\corpus\\D4.txt");
+//        documents[2]++;
+//        documents[0]++;
+//        train(normalize(readFile(file.getPath()).split(" ")), 1);
     }
 
     private static void chiSquare(String word) {
         if (!vocabulary.containsKey(word)) {
-            int chiSquare = calculate(word);
+            BigDecimal chiSquare = calculate(word);
             if (vocabulary.size() > MAX_SIZE) {
-                int min = Collections.min(vocabulary.values());
-                if (chiSquare > min) {
+                BigDecimal minimal = new BigDecimal(0);
+                for (String key : vocabulary.keySet()) {
+                    minimal = minimal.min(vocabulary.get(key));
+                }
+                if (chiSquare.compareTo(minimal) == 1) {
                     for (String key : vocabulary.keySet()) {
-                        if (vocabulary.get(key) == min) {
+                        if (vocabulary.get(key) == minimal) {
                             vocabulary.remove(key);
                             break;
                         }
@@ -103,37 +126,52 @@ public class main {
                 vocabulary.put(word, chiSquare);
             }
         } else {
-            int chiSquare = calculate(word);
+            BigDecimal chiSquare = calculate(word);
             vocabulary.replace(word, chiSquare);
         }
     }
 
-    private static int calculate(String word) {
-        double[][] table = new double[NUMBER_OF_CLASSES + 1][3];
+    private static BigDecimal calculate(String word) {
+        int[][] table = new int[3][NUMBER_OF_CLASSES + 1];
 
         int total = 0;
         for (int i = 0; i < NUMBER_OF_CLASSES; i++) {
-            if (wordTable.containsKey(word)) {
-                total += wordTable.get(word)[i];
-                table[i][0] = wordTable.get(word)[i];
+            if (chiSquare.containsKey(word)) {
+                table[0][i] = chiSquare.get(word)[i];
+                total += table[0][i];
             } else {
-                table[i][0] = 0;
+                table[0][i] = 0;
             }
         }
-        table[NUMBER_OF_CLASSES][0] = total;
-        table[NUMBER_OF_CLASSES][2] = total;
+        table[0][NUMBER_OF_CLASSES] = total;
+
+        total = 0;
         for (int i = 0; i < NUMBER_OF_CLASSES; i++) {
-            table[i][1] = words[i] - table[i][0];
-            table[i][2] = table[i][0] + table[i][1];
-            table[NUMBER_OF_CLASSES][2] += table[i][0] + table[i][1];
+            table[1][i] = documents[i + 1] - table[0][i];
+            total += table[1][i];
+            table[2][i] = table[0][i] + table[1][i];
         }
+        table[1][NUMBER_OF_CLASSES] = total;
 
+        table[2][NUMBER_OF_CLASSES] = documents[0];
 
-        int result = 0;
+//        System.out.println(word + " " + Arrays.toString(table[0]) + " " + Arrays.toString(table[1]) + " " + Arrays.toString(table[2]));
+
+        BigDecimal result = new BigDecimal(0);
         for (int i = 0; i < NUMBER_OF_CLASSES; i++) {
             for (int j = 0; j < 2; j++) {
-                double expected = table[i][2] * table[NUMBER_OF_CLASSES][j] / (table[NUMBER_OF_CLASSES][2]);
-                result += Math.pow((table[i][j] - expected), 2) / expected;
+//                BigDecimal expected = new BigDecimal(1);
+//                expected = expected.multiply(new BigDecimal(table[2][i]));
+//                expected = expected.multiply(new BigDecimal(documents[i + 1]));
+//                expected = expected.divide(new BigDecimal(documents[0]), 50, RoundingMode.HALF_UP);
+//                BigDecimal noemer = new BigDecimal(table[j][i]).subtract(expected);
+//                noemer = noemer.multiply(noemer);
+//                noemer = noemer.divide(expected, 50, RoundingMode.HALF_UP);
+//                result = result.add(noemer);
+
+                double expected = table[2][i] * documents[i + 1] / documents[0];
+                double finish = Math.pow((table[j][i] - expected), 2) / expected;
+                result = result.add(new BigDecimal(finish));
             }
         }
         return result;
@@ -151,7 +189,21 @@ public class main {
     }
 
     private static void train(String[] document, int i) {
+        Set<String> allWords = new HashSet<>();
+
         for (String word : document) {
+            if (!allWords.contains(word)) {
+                allWords.add(word);
+                int[] table;
+                if (chiSquare.containsKey(word)) {
+                    table = chiSquare.get(word);
+                    table[i] = chiSquare.get(word)[i] + 1;
+                } else {
+                    table = new int[NUMBER_OF_CLASSES];
+                    table[i] = 1;
+                }
+                chiSquare.put(word, table);
+            }
             words[i] = words[i] + 1;
             int[] table;
             if (wordCount.containsKey(word)) {
@@ -162,7 +214,6 @@ public class main {
                 table[i] = 1;
             }
             wordCount.put(word, table);
-            chiSquare(word);
         }
     }
 

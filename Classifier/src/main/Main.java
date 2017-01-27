@@ -38,6 +38,18 @@ public class Main {
         classnames = names.clone();
     }
 
+    public void learn(File file, int i) {
+        train(normalize(readFile(file.getPath()).split(" ")), i);
+
+        for (String word : vocabulary.keySet()) {
+            chiSquare(word);
+        }
+
+        for (String word : normalize(readFile(file.getPath()).split(" "))) {
+            chiSquare(word);
+        }
+    }
+
     public static void main(String[] args) {
         for (int i = 1; i < 11; i++) {
             train(i);

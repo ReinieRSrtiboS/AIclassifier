@@ -113,13 +113,10 @@ public class Main {
         //TODO maakt path compatible
         File dir = new File("C:\\Users\\Reinier\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
         for (File file : dir.listFiles()) {
-            documents[0]++;
             if (file.getName().contains("spmsg")) {
                 train(normalize(readFile(file.getPath()).split(" ")), 0);
-                documents[1]++;
             } else {
                 train(normalize(readFile(file.getPath()).split(" ")), 1);
-                documents[2]++;
             }
         }
     }
@@ -209,6 +206,9 @@ public class Main {
 
     private static void train(String[] document, int i) {
         Set<String> allWords = new HashSet<>();
+
+        documents[0]++;
+        documents[i + 1]++;
 
         for (String word : document) {
             if (!allWords.contains(word)) {

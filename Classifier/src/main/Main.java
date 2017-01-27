@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -49,7 +48,7 @@ public class Main {
 
         for (int i = 1; i < 11; i++) {
             //TODO fix path
-            File dir = new File("C:\\Users\\Reinier2\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
+            File dir = new File("C:\\Users\\Reinier\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
             for (File file : dir.listFiles()) {
                 double spamKans = 0;
                 double hamKans = 0;
@@ -77,9 +76,36 @@ public class Main {
         System.out.println(percentage + "%");
     }
 
+    private static int classify(String[] document) {
+        int[] chance = new int[NUMBER_OF_CLASSES];
+        double V = wordCount.keySet().size();
+        double[] classChance = new double[NUMBER_OF_CLASSES];
+
+        for (int i = 0; i < NUMBER_OF_CLASSES; i++) {
+            chance[i] = 0;
+        }
+        for (String word : document) {
+            if (vocabulary.containsKey(word)) {
+                for (int i = 0; i < NUMBER_OF_CLASSES; i++) {
+                    chance[i] += Math.log(classify(word, V, i));
+                }
+            }
+        }
+        for (int i = 0 ; i  < NUMBER_OF_CLASSES; i++) {
+            classChance[i] = (double) documents[i + 1] / (double) documents[0] * 100;
+            chance[i] += Math.log(classChance[i]);
+        }
+
+        int result = 0;
+        for (int i = 0; i < NUMBER_OF_CLASSES; i++) {
+            result = chance[i] > result ? chance[i] : result;
+        }
+        return result;
+    }
+
     private static void train(int i) {
         //TODO maakt path compatible
-        File dir = new File("C:\\Users\\Reinier2\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
+        File dir = new File("C:\\Users\\Reinier\\Downloads\\corpus-mails\\corpus-mails\\corpus\\part" + i + "/");
         for (File file : dir.listFiles()) {
             documents[0]++;
             if (file.getName().contains("spmsg")) {

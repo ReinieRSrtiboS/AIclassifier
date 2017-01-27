@@ -11,10 +11,12 @@ import java.util.*;
 public class Main {
 
     private static final int smoother = 1;
-    private static final int MAX_SIZE = 300;
-    private static final int NUMBER_OF_CLASSES = 2;
+    private static int CHI_SQUARE_SIZE = 300;
+    private static int NUMBER_OF_CLASSES = 0;
 
-    private static int[] documents = new int[NUMBER_OF_CLASSES + 1];
+    private static String[] classnames;
+
+    private static int[] documents;
 
     private static Map<String, BigDecimal> vocabulary = new HashMap<>();  //de lijst met woorden die worden gebruikt
 
@@ -22,23 +24,27 @@ public class Main {
 
     private static Map<String, int[]> chiSquare = new HashMap<>(); // telt per woord aantal texten dat hij inzit
 
-    private static int[] words = new int[NUMBER_OF_CLASSES]; //telt het aantal woorden per class
+    private static int[] words; //telt het aantal woorden per class
 
     private static int correct = 0;
     private static int incorrect = 0;
 
 
+    public Main(int classes, int chi, String[] names) {
+        NUMBER_OF_CLASSES = classes;
+        CHI_SQUARE_SIZE = chi;
+        documents = new int[NUMBER_OF_CLASSES + 1];
+        words = new int[NUMBER_OF_CLASSES];
+        classnames = names.clone();
+    }
+
     public static void main(String[] args) {
         for (int i = 1; i < 11; i++) {
             train(i);
         }
-//        train(1);
         for (String word : wordCount.keySet()) {
             chiSquare(word);
         }
-//        for (String key : vocabulary.keySet()) {
-//            System.out.println(key + " " + vocabulary.get(key));
-//        }
         double V = wordCount.keySet().size();
 
         double[] classChance = new double[NUMBER_OF_CLASSES];
@@ -76,7 +82,7 @@ public class Main {
         System.out.println(percentage + "%");
     }
 
-    private static int classify(String[] document) {
+    private static String classify(String[] document) {
         int[] chance = new int[NUMBER_OF_CLASSES];
         double V = wordCount.keySet().size();
         double[] classChance = new double[NUMBER_OF_CLASSES];
@@ -98,9 +104,9 @@ public class Main {
 
         int result = 0;
         for (int i = 0; i < NUMBER_OF_CLASSES; i++) {
-            result = chance[i] > result ? chance[i] : result;
+            result = chance[i] > result ? i : result;
         }
-        return result;
+        return classnames[result];
     }
 
     private static void train(int i) {
@@ -116,25 +122,12 @@ public class Main {
                 documents[2]++;
             }
         }
-
-        //         testing chi-square
-
-//        File dir = new File("C:\\Users\\Reinier2\\Downloads\\corpus-mails\\corpus-mails\\corpus\\test_chisquare");
-//        for (File file : dir.listFiles()) {
-//            documents[0]++;
-//            documents[1]++;
-//            train(normalize(readFile(file.getPath()).split(" ")), 0);
-//        }
-//        File file = new File("C:\\Users\\Reinier2\\Downloads\\corpus-mails\\corpus-mails\\corpus\\D4.txt");
-//        documents[2]++;
-//        documents[0]++;
-//        train(normalize(readFile(file.getPath()).split(" ")), 1);
     }
 
     private static void chiSquare(String word) {
         if (!vocabulary.containsKey(word)) {
             BigDecimal chiSquare = calculate(word);
-            if (vocabulary.size() > MAX_SIZE) {
+            if (vocabulary.size() > CHI_SQUARE_SIZE) {
                 BigDecimal minimal = new BigDecimal(0);
                 for (String key : vocabulary.keySet()) {
                     minimal = minimal.min(vocabulary.get(key));

@@ -38,14 +38,14 @@ public class Main {
         classnames = names.clone();
     }
 
-    public void learn(File file, int i) {
-        train(normalize(readFile(file.getPath()).split(" ")), i);
+    public void learn(String path, int i) {
+        train(normalize(readFile(path).split(" ")), i);
 
         for (String word : vocabulary.keySet()) {
             chiSquare(word);
         }
 
-        for (String word : normalize(readFile(file.getPath()).split(" "))) {
+        for (String word : normalize(readFile(path).split(" "))) {
             chiSquare(word);
         }
     }

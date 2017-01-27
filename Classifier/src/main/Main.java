@@ -61,8 +61,8 @@ public class Main {
                 String[] document = normalize(readFile(file.getPath()).split(" "));
                 for (String word : document) {
                     if (vocabulary.containsKey(word)) {
-                        spamKans += Math.log(classify(word, V, 0));
-                        hamKans += Math.log(classify(word, V, 1));
+                        spamKans += Math.log(chanceOfWord(word, V, 0));
+                        hamKans += Math.log(chanceOfWord(word, V, 1));
                     }
                 }
                 spamKans += Math.log(classChance[0]);
@@ -82,7 +82,7 @@ public class Main {
         System.out.println(percentage + "%");
     }
 
-    private static String classify(String[] document) {
+    private static String chanceOfWord(String[] document) {
         int[] chance = new int[NUMBER_OF_CLASSES];
         double V = wordCount.keySet().size();
         double[] classChance = new double[NUMBER_OF_CLASSES];
@@ -93,7 +93,7 @@ public class Main {
         for (String word : document) {
             if (vocabulary.containsKey(word)) {
                 for (int i = 0; i < NUMBER_OF_CLASSES; i++) {
-                    chance[i] += Math.log(classify(word, V, i));
+                    chance[i] += Math.log(chanceOfWord(word, V, i));
                 }
             }
         }
@@ -236,7 +236,7 @@ public class Main {
         }
     }
 
-    private static double classify(String word, double V, int i) {
+    private static double chanceOfWord(String word, double V, int i) {
         double occurrence = wordCount.containsKey(word) ? wordCount.get(word)[i] : 0;
         double teller = words[i] + (smoother * V);
         double noemer = occurrence + smoother;
